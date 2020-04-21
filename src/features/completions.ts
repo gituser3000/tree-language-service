@@ -34,9 +34,7 @@ export class Completions {
                 async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                     if (document.getText().length === 0) return undefined;
                     const pathName = getPathNameExceptExtension(document);
-                    console.log(pathName);
                     const sourceMapJson = JSON.parse(readFileSync(getPathNameExceptExtension(document) + ".map", 'utf8'))
-                    console.log("position before sourcemap:", position.line+1, ":", position.character+1);
                     const consumer= await new SourceMapConsumer(sourceMapJson);
                     const generatedPosition = consumer.generatedPositionFor({
                         column: position.character + 1,
@@ -51,7 +49,6 @@ export class Completions {
                         line: generatedPosition.line!,
                         offset: generatedPosition.column! + 1
                     })
-                    console.log("completion response:", response);
                     return response.body?.entries
                         .filter(item => ["class", "method"].includes(item.kind))
                         .map(item => {
