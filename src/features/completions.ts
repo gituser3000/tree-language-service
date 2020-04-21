@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { SourceMapConsumer } from 'source-map';
 import { TsServer } from '../tsserver';
 import { CompletionItemKind } from 'vscode';
+import { TREE_PATTERN } from '../utils/model';
 
 export class Completions {
     constructor(server: TsServer, context: vscode.ExtensionContext) {
@@ -14,7 +15,7 @@ export class Completions {
     }
 
     private _getComponentCreateCompletion() {
-        return vscode.languages.registerCompletionItemProvider({ pattern: '**/*.tree' }, {
+        return vscode.languages.registerCompletionItemProvider(TREE_PATTERN, {
             provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                 if (document.lineAt(position.line).text.length === 0) {
                     const snippetCompletion = new vscode.CompletionItem('$');
@@ -28,37 +29,36 @@ export class Completions {
 
     private getTsCompletions(server: TsServer) {
         return vscode.languages.registerCompletionItemProvider(
-            { pattern: '**/*.tree' },
+            TREE_PATTERN,
             {
-                provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+                async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                     if (document.getText().length === 0) return undefined;
                     const pathName = getPathNameExceptExtension(document);
                     console.log(pathName);
                     const sourceMapJson = JSON.parse(readFileSync(getPathNameExceptExtension(document) + ".map", 'utf8'))
-                    return new SourceMapConsumer(sourceMapJson).then(consumer => {
-                        const generatedPosition = consumer.generatedPositionFor({
-                            column: position.character + 1,
-                            line: position.line + 1,
-                            source: getNameExceptExtension(document)
-                        })
-
-                        const wordRange = document.getWordRangeAtPosition(position, /[$\w]{1,}/);
-                        return server.runCompletionsRequest({
-                            prefix: wordRange ? document.getText(wordRange?.with(undefined, position)) : "",
-                            file: pathName + ".ts",
-                            line: generatedPosition.line!,
-                            offset: generatedPosition.column! + 1
-                        }).then(response => {
-                            console.log("completion response:", response);
-                            return response.body?.entries
-                                .filter(item => ["class", "method"].includes(item.kind))
-                                .map(item => {
-                                    const kind = item.kind === "method" ? CompletionItemKind.Method : CompletionItemKind.Class
-                                    const resultItem: vscode.CompletionItem = { ...item, label: item.name, kind };
-                                    return resultItem;
-                                });
-                        })
+                    console.log("position before sourcemap:", position.line+1, ":", position.character+1);
+                    const consumer= await new SourceMapConsumer(sourceMapJson);
+                    const generatedPosition = consumer.generatedPositionFor({
+                        column: position.character + 1,
+                        line: position.line + 1,
+                        source: getNameExceptExtension(document)
                     })
+
+                    const wordRange = document.getWordRangeAtPosition(position, /[$\w]{1,}/);
+                    const response = await server.runCompletionsRequest({
+                        prefix: wordRange ? document.getText(wordRange?.with(undefined, position)) : "",
+                        file: pathName + ".ts",
+                        line: generatedPosition.line!,
+                        offset: generatedPosition.column! + 1
+                    })
+                    console.log("completion response:", response);
+                    return response.body?.entries
+                        .filter(item => ["class", "method"].includes(item.kind))
+                        .map(item => {
+                            const kind = item.kind === "method" ? CompletionItemKind.Method : CompletionItemKind.Class
+                            const resultItem: vscode.CompletionItem = { ...item, label: item.name, kind };
+                            return resultItem;
+                        });
                 }
             }
         )

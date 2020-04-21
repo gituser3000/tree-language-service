@@ -1,0 +1,1 @@
+export const TREE_PATTERN = { pattern: "**/*.tree"};
