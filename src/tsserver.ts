@@ -14,6 +14,8 @@ interface RequestCallback {
 	reject: Function;
 }
 
+type Request<T> = Omit<T, 'type' | 'seq'>
+
 export class TsServer extends Disposable {
 	#process!: cp.ChildProcess;
 	#reader!: Reader<Proto.Response>;
@@ -54,24 +56,36 @@ export class TsServer extends Disposable {
 		return path.join(workspacePath!, nodePath);
 	}
 
-	public runCompletionsRequest(data: Proto.CompletionsRequestArgs): Promise<Proto.CompletionInfoResponse> {
+	public runSymbolLocationsRequest(type: CommandTypes.Implementation , data: Proto.FileLocationRequestArgs): Promise<Proto.ImplementationResponse>
+	public runSymbolLocationsRequest(type: CommandTypes.Definition , data: Proto.FileLocationRequestArgs): Promise<Proto.DefinitionResponse>
+	public runSymbolLocationsRequest(type: CommandTypes.Implementation | CommandTypes.Definition , data: Proto.FileLocationRequestArgs){
+		console.log(`${type}: ${JSON.stringify(data)}`)
+		const request: Request<Proto.ImplementationRequest | Proto.DefinitionRequest> = { 
+			command: type,
+			arguments: data
+		};
+		return this.runRequestWithResponse(request) ;
+	}
+
+	public runCompletionsRequest(data: Proto.CompletionsRequestArgs){
+		const request: Request<Proto.CompletionsRequest> = { 
+			command: CommandTypes.CompletionInfo,
+			arguments: data
+		};
+		return this.runRequestWithResponse(request) as Promise<Proto.CompletionInfoResponse>;
+	}
+
+	private runRequestWithResponse(request: any){
 		return new Promise((resolve, reject) => {
 			this.#callbacks[this.#seq] = {
 				resolve, reject
 			}
-			const request: Proto.CompletionsRequest = { 
-				command: CommandTypes.CompletionInfo,
-				arguments: data,
-				...this.getBasicRequestArgs()
-			};
-			console.log("completions request:", request);
 			this.runRequestWithoutWaitingForResponse(request)
 		})
 	}
 
 	public openFileRequest(filepath: string, fileContent: string, projectRootPath?: string) {
-		const request: Proto.OpenRequest = {
-			...this.getBasicRequestArgs(),
+		const request: Request<Proto.OpenRequest> = {
 			command: CommandTypes.Open,
 			arguments: {
 				file: filepath,
@@ -92,8 +106,7 @@ export class TsServer extends Disposable {
 	}
 
 	public closeFileRequest(path: string){
-		const request: Proto.CloseRequest= {
-			...this.getBasicRequestArgs(),
+		const request: Request<Proto.CloseRequest>= {
 			command: CommandTypes.Close,
 			arguments: {
 				file: path
@@ -103,6 +116,10 @@ export class TsServer extends Disposable {
 	}
 
 	private runRequestWithoutWaitingForResponse(request: any) {
+		request = {
+			...request,
+			...this.getBasicRequestArgs()
+		}
 		try {
 			this.#process.stdin.write(JSON.stringify(request) + EOL)
 		} catch (e) {
