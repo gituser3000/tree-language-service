@@ -1,6 +1,6 @@
 # tree-language-service README
 
-Provides intellisense support for .tree files of $mol framework.
+Provides intellisense support for .tree files of [$mol](https://github.com/eigenmethod/mol) framework.
 
 Note: All features require for file to be saved and compiled;
 
