@@ -9,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
 	try {
 		const server = new TsServer();
 		const fileSync = new FileSynchronize(server);
-		const completions = new Completions(server, context);
+		// const completions = new Completions(server, context);
 		const definition = new Definition(server, context);
 	} catch (e) {
 		console.log("INITIALIZATION FAIL: ", e);
