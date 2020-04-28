@@ -7,6 +7,8 @@ import { TREE_PATTERN } from '../utils/model';
 import { CommandTypes } from 'typescript/lib/protocol';
 import * as Proto from 'typescript/lib/protocol';
 
+const SPECIAL_SYMBOLS = /(<=>|<=|=>|\*|\\|\/|@)/;
+
 export class Definition {
     constructor(server: TsServer, context: vscode.ExtensionContext) {
      context.subscriptions.push(this._getTreeTsDefinitions(server))
@@ -26,8 +28,8 @@ export class Definition {
                     return undefined;
                 }
 
+                //  go to component definition
                 const range = document.getWordRangeAtPosition(position, /[$\w]{1,}/);
-
                 if (document.getText(range).startsWith("$")){
                     const response = await server.runSymbolLocationsRequest(CommandTypes.Definition,{
                         file: getPathNameExceptExtension(document)+".ts",
@@ -35,12 +37,31 @@ export class Definition {
                         offset: genPos.column+1
                     })
                     if (response.body){
-                        console.log("response definitions:", response.body);
                         return mapSymbolResponse(document, position, response);
                     }
                 }
 
 
+                // go to generated tree.ts in case implementations and definitions are not needed
+                const lineFromCharacter = document.lineAt(position.line).text.substr(position.character);
+                const lineBeforeCharacter = document.lineAt(position.line).text.substr(0, position.character);
+
+                if (lineFromCharacter.match(SPECIAL_SYMBOLS) && !lineBeforeCharacter.match(SPECIAL_SYMBOLS)){
+                    const newUri = document.uri.with({
+                        path: getPathNameExceptExtension(document)+".ts"
+                    });
+                    const targetRange = new vscode.Range(new vscode.Position(genPos.line! -1 ,genPos.column! + 1), new vscode.Position(genPos.line! -1 , genPos.column! + 1))
+                    return [
+                        {
+                            originSelectionRange: document.getWordRangeAtPosition(position),
+                            targetUri: newUri,
+                            targetRange: targetRange
+        
+                        }
+                    ] as vscode.LocationLink[]
+                }
+
+                // go to implementations otherwise
                 const response = await server.runSymbolLocationsRequest(CommandTypes.Implementation,{
                     file: getPathNameExceptExtension(document)+".ts",
                     line: genPos.line,
@@ -48,23 +69,9 @@ export class Definition {
                 })
 
                 if (response.body){
-                    console.log("response implementations:", response.body);
                     return mapSymbolResponse(document, position, response);
                 }
 
-                console.log("go to tree.ts")
-                const newUri = document.uri.with({
-                    path: getPathNameExceptExtension(document)+".ts"
-                });
-                const targetRange = new vscode.Range(new vscode.Position(genPos.line! -1 ,genPos.column! + 1), new vscode.Position(genPos.line! -1 , genPos.column! + 1))
-                return [
-                    {
-                        originSelectionRange: document.getWordRangeAtPosition(position),
-                        targetUri: newUri,
-                        targetRange: targetRange
-    
-                    }
-                ] as vscode.LocationLink[]
             }
         })
 
