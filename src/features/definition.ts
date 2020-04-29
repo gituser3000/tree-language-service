@@ -75,14 +75,17 @@ function getTreeTsDefinitions(server: TsServer) {
     })
 
     function mapSymbolResponse(document: vscode.TextDocument, position: vscode.Position, response: Proto.ImplementationResponse | Proto.DefinitionResponse): vscode.LocationLink[] {
-        return response.body!.map(item => {
-            return {
-                originSelectionRange: document.getWordRangeAtPosition(position),
-                targetUri: document.uri.with({
-                    path: item.file
-                }),
-                targetRange: new vscode.Range(new vscode.Position(item.start.line - 1, item.start.offset), new vscode.Position(item.end.line, item.end.offset))
-            }
-        }) as vscode.LocationLink[]
+        return response.body!
+            .filter(item => !item.file.endsWith("object2/object2.ts"))
+            .map(item => {
+                console.log(item);
+                return {
+                    originSelectionRange: document.getWordRangeAtPosition(position),
+                    targetUri: document.uri.with({
+                        path: item.file
+                    }),
+                    targetRange: new vscode.Range(new vscode.Position(item.start.line - 1, item.start.offset), new vscode.Position(item.end.line, item.end.offset))
+                }
+            }) as vscode.LocationLink[]
     }
 }
