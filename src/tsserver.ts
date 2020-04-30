@@ -25,7 +25,6 @@ export class TsServer extends Disposable {
 	constructor() {
 		super();
 		const args = [
-			'--logFile', '/home/osboxes/Documents/custom_tsserver.log',
 			"--logVerbosity", "verbose",
 			"--locale", "en",
 			"--useInferredProjectPerProjectRoot",
