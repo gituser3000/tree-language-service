@@ -2,7 +2,12 @@
     "name": "tree-language-service",
     "displayName": "Tree_Language_Service",
     "description": "mol .tree language service",
-    "version": "0.0.1",
+    "publisher": "valikov",
+    "version": "1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gituser3000/tree-language-service"
+      },
     "engines": {
         "vscode": "^1.43.0"
     },
@@ -14,7 +19,7 @@
             {
                 "id": "tree",
                 "aliases": [
-                    "$mol view tree",
+                    "mol view tree",
                     "tree"
                 ],
                 "extensions": [
