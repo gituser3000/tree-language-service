@@ -1,9 +1,10 @@
 {
     "name": "tree-language-service",
-    "displayName": "Tree_Language_Service",
-    "description": "mol .tree language service",
+    "displayName": "Tree Language Service",
+    "description": "mol .view.tree language service",
     "publisher": "valikov",
-    "version": "1.0.3",
+    "version": "1.0.4",
+    "icon": "assets/logo.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/gituser3000/tree-language-service"
@@ -23,7 +24,7 @@
                     "tree"
                 ],
                 "extensions": [
-                    ".tree"
+                    ".view.tree"
                 ],
                 "configuration": "./language-configuration.json"
             }

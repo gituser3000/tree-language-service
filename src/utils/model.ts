@@ -1,1 +1,1 @@
-export const TREE_PATTERN = { pattern: "**/*.tree"};
+export const TREE_PATTERN = { pattern: "**/*.view.tree"};

@@ -31,8 +31,8 @@ export class TsServer extends Disposable {
 			"--disableAutomaticTypingAcquisition",
 			"--cancellationPipeName", `/tmp/vscode-tree-language-service/tree-req-cancellation${Date.now()}*`,
 			"--validateDefaultNpmLocation"
-		];
-
+    ];
+    
 		this.#process = cp.fork(this._getWorkspaceTsPath(), args, { 
 			stdio: 'pipe',
 			detached: platform() === 'win32' ? false : true,
@@ -50,21 +50,20 @@ export class TsServer extends Disposable {
 	private _getWorkspaceTsPath(): string {
 		const nodePath = path.join('node_modules', 'typescript', 'lib', "tsserver.js");
 		const workspacePath = vscode.workspace.workspaceFolders?.find(item => {
-			let pathToTs = path.join(item.uri.fsPath, nodePath);
+			const pathToTs = path.join(item.uri.fsPath, nodePath);
 			if (fs.existsSync(pathToTs)) {
 				return pathToTs
 			}
-		})?.uri.path
+		})?.uri.fsPath
 		if (!workspacePath) {
 			throw Error('Typescript in workspace is absent')
-		}
+    }
 		return path.join(workspacePath!, nodePath);
 	}
 
 	public runSymbolLocationsRequest(type: CommandTypes.Implementation , data: Proto.FileLocationRequestArgs): Promise<Proto.ImplementationResponse>
 	public runSymbolLocationsRequest(type: CommandTypes.Definition , data: Proto.FileLocationRequestArgs): Promise<Proto.DefinitionResponse>
 	public runSymbolLocationsRequest(type: CommandTypes.Implementation | CommandTypes.Definition , data: Proto.FileLocationRequestArgs){
-		console.log(`${type}: ${JSON.stringify(data)}`)
 		const request: Request<Proto.ImplementationRequest | Proto.DefinitionRequest> = { 
 			command: type,
 			arguments: data
@@ -147,6 +146,7 @@ export class TsServer extends Disposable {
 						console.log("request seq", seq);
 						const callback = this.#callbacks[seq];
 						if (callback) {
+              delete this.#callbacks[seq];
 							// this._tracer.traceRequestCompleted(this._serverId, 'requestCompleted', seq, callback);
 							callback.resolve(event);
 						}
