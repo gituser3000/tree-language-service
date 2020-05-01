@@ -1,6 +1,6 @@
 {
     "name": "tree-language-service",
-    "displayName": "Tree Language Service",
+    "displayName": "$mol Language Service",
     "description": "mol .view.tree language service",
     "publisher": "valikov",
     "version": "1.0.4",
