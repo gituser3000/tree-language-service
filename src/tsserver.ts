@@ -50,10 +50,7 @@ export class TsServer extends Disposable {
 	private _getWorkspaceTsPath(): string {
 		const nodePath = path.join('node_modules', 'typescript', 'lib', "tsserver.js");
 		const workspacePath = vscode.workspace.workspaceFolders?.find(item => {
-			let pathToTs = path.join(item.uri.path, nodePath);
-			if (pathToTs.startsWith(path.sep)) {
-				pathToTs = pathToTs.substr(1);
-			  }
+			let pathToTs = path.join(item.uri.fsPath, nodePath);
 			if (fs.existsSync(pathToTs)) {
 				return pathToTs
 			}
