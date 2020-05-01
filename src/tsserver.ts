@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as Proto from 'typescript/lib/protocol';
 import { Reader } from "./wireProtocol";
 import { Disposable } from "./utils/dispose";
-import { EOL } from "os";
+import { EOL, platform } from "os";
 import { CommandTypes } from "typescript/lib/protocol";
 
 interface RequestCallback {
@@ -32,7 +32,13 @@ export class TsServer extends Disposable {
 			"--cancellationPipeName", `/tmp/vscode-tree-language-service/tree-req-cancellation${Date.now()}*`,
 			"--validateDefaultNpmLocation"
 		];
-		this.#process = cp.fork(this._getWorkspaceTsPath(), args, { stdio: 'pipe' });
+
+		this.#process = cp.fork(this._getWorkspaceTsPath(), args, { 
+			stdio: 'pipe',
+			detached: platform() === 'win32' ? false : true,
+			cwd: process.cwd()
+		 });
+
 		this.#reader = this._register(new Reader<Proto.Response>(this.#process.stdout));
 		this.listenResponses();
 	}
@@ -44,7 +50,10 @@ export class TsServer extends Disposable {
 	private _getWorkspaceTsPath(): string {
 		const nodePath = path.join('node_modules', 'typescript', 'lib', "tsserver.js");
 		const workspacePath = vscode.workspace.workspaceFolders?.find(item => {
-			const pathToTs = path.join(item.uri.path, nodePath);
+			let pathToTs = path.join(item.uri.path, nodePath);
+			if (pathToTs.startsWith(path.sep)) {
+				pathToTs = pathToTs.substr(1);
+			  }
 			if (fs.existsSync(pathToTs)) {
 				return pathToTs
 			}
