@@ -3,6 +3,7 @@ import { TsServer } from './tsserver';
 import { FileSynchronize } from './fileSynchronize';
 import { completions } from './features/completions';
 import { definition } from './features/definition';
+import { diagnostics } from './features/diagnostics';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -11,6 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const fileSync = new FileSynchronize(server);
 		// completions(server, context);
 		definition(server, context);
+		diagnostics(server, context);
 	} catch (e) {
 		console.log("INITIALIZATION FAIL: ", e);
 	}

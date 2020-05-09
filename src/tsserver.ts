@@ -8,6 +8,8 @@ import { Reader } from "./wireProtocol";
 import { Disposable } from "./utils/dispose";
 import { EOL, platform } from "os";
 import { CommandTypes } from "typescript/lib/protocol";
+import { TsDiagnostics } from "./utils/model";
+import { getDignosticsKind } from "./features/diagnostics";
 
 interface RequestCallback {
 	resolve: Function;
@@ -22,9 +24,13 @@ export class TsServer extends Disposable {
 	#seq = 1;
 	#callbacks: { [a: number]: RequestCallback } = {}
 
+	readonly #onDiagnosticsReceived = this._register(new vscode.EventEmitter<TsDiagnostics>());
+	readonly onDiagnosticsReceived = this.#onDiagnosticsReceived.event;
+
 	constructor() {
 		super();
 		const args = [
+			// '--logFile', '/home/osboxes/Documents/custom_tsserver.log',
 			"--logVerbosity", "verbose",
 			"--locale", "en",
 			"--useInferredProjectPerProjectRoot",
@@ -88,6 +94,29 @@ export class TsServer extends Disposable {
 		})
 	}
 
+	public async runDiagnosticRequest(file: string){
+		const request: Request<Proto.GeterrRequest> = {
+			command: CommandTypes.Geterr,
+			arguments: {
+				delay: 0,
+				files: [file]
+			}
+		}
+		await this.runReloadRequest(file);
+		this.runRequestWithoutWaitingForResponse(request);
+	}
+
+	private runReloadRequest(file: string){
+		const request: Request<Proto.ReloadRequest> = {
+			command: CommandTypes.Reload,
+			arguments: {
+				file: file,
+				tmpfile: file
+			}
+		}
+		return this.runRequestWithResponse(request);
+	}
+
 	public openFileRequest(filepath: string, fileContent: string, projectRootPath?: string) {
 		const request: Request<Proto.OpenRequest> = {
 			command: CommandTypes.Open,
@@ -143,16 +172,16 @@ export class TsServer extends Disposable {
 					const event = message as Proto.Event;
 					if (event.event === 'requestCompleted') {
 						const seq = (event as Proto.RequestCompletedEvent).body.request_seq;
-						console.log("request seq", seq);
 						const callback = this.#callbacks[seq];
 						if (callback) {
-              delete this.#callbacks[seq];
+              				delete this.#callbacks[seq];
 							// this._tracer.traceRequestCompleted(this._serverId, 'requestCompleted', seq, callback);
 							callback.resolve(event);
 						}
 					} else {
 						// this._tracer.traceEvent(this._serverId, event);
 						// this._onEvent.fire(event);
+						this.dispatchEvent(event);
 					}
 					break;
 
@@ -169,6 +198,7 @@ export class TsServer extends Disposable {
 		if (!callback) {
 			return;
 		}
+		delete this.#callbacks[response.request_seq];
 
 		// this._tracer.traceResponse(this._serverId, response, callback);
 		if (response.success) {
@@ -179,6 +209,24 @@ export class TsServer extends Disposable {
 		} else {
 			// callback.onError(TypeScriptServerError.create(this._serverId, this._version, response));
 		}
+	}
+
+	private dispatchEvent(event: Proto.Event) {
+		switch (event.event) {
+			case 'syntaxDiag':
+			case 'semanticDiag':
+			case 'suggestionDiag':
+				const diagnosticEvent = event as Proto.DiagnosticEvent;
+				if (diagnosticEvent.body && diagnosticEvent.body.diagnostics) {
+					this.#onDiagnosticsReceived.fire({
+						kind: getDignosticsKind(event),
+						resource: vscode.Uri.parse(diagnosticEvent.body.file),
+						diagnostics: diagnosticEvent.body.diagnostics
+					});
+					
+				}
+				break;
+			}
 	}
 
 }

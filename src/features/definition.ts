@@ -78,7 +78,6 @@ function getTreeTsDefinitions(server: TsServer) {
         return response.body!
             .filter(item => !item.file.endsWith("object2/object2.ts"))
             .map(item => {
-                console.log(item);
                 return {
                     originSelectionRange: document.getWordRangeAtPosition(position),
                     targetUri: document.uri.with({

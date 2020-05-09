@@ -2,11 +2,11 @@ import { TsServer } from "./tsserver";
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Disposable } from "./utils/dispose";
-import { readFileSync } from "fs";
-import { getPathNameExceptExtension } from "./utils/functions";
+import { readFileSync, watch, FSWatcher } from "fs";
+import { getGeneratedPathName } from "./utils/functions";
 
 export class FileSynchronize extends Disposable {
-	#syncedFiles = new Map<string, { resource: string, value: any }>()
+	#syncedFiles = new Map<string, FSWatcher>()
 	#server: TsServer
 
 	constructor(server: TsServer) {
@@ -18,49 +18,33 @@ export class FileSynchronize extends Disposable {
 	private runSynchronise() {
 		vscode.workspace.onDidOpenTextDocument(this.openTextDocument, this, this._disposables);
 		vscode.workspace.onDidCloseTextDocument(this.closeTextDocument, this, this._disposables);
-		vscode.workspace.onDidChangeTextDocument(this.changeTextDocument, this, this._disposables);
-		vscode.window.onDidChangeVisibleTextEditors(e => {
-			// for (const { document } of e) {
-			// 	const syncedBuffer = this.syncedBuffers.get(document.uri);
-			// 	if (syncedBuffer) {
-			// 		this.requestDiagnostic(syncedBuffer);
-			// 	}
-			// }
-		}, this, this._disposables);
 		vscode.workspace.textDocuments.forEach(this.openTextDocument, this);
-	}
-
-	public changeTextDocument(e: vscode.TextDocumentChangeEvent){
-		// trigger diagnostics
 	}
 
 	private openTextDocument(document: vscode.TextDocument) {
 		if( !document.fileName.endsWith(".tree")){
 			return;
 		}
-		const resource = document.fileName;
-		const fileName = getPathNameExceptExtension(document) + ".ts";
-
+		const fileName = getGeneratedPathName(document);
 		if (this.#syncedFiles.has(fileName)) {
 			return true;
 		}
-		this.#syncedFiles.set(fileName, { resource, value: true });
+		const watcher = watch(fileName, 'utf8', ()=>{
+			this.#server.runDiagnosticRequest(fileName)
+		})
 		this.#server.openFileRequest(fileName, readFileSync(fileName, {encoding:'utf-8'}), this.getWorkspaceRootForResource(document.uri))
+		this.#syncedFiles.set(fileName, watcher);
 	}
 	private closeTextDocument(document: vscode.TextDocument){
 		if( !document.fileName.endsWith(".tree")){
 			return;
 		}
-		const syncedFile = this.#syncedFiles.get(document.fileName);
-		if (!syncedFile) {
+		const fileName = getGeneratedPathName(document);
+		if (!this.#syncedFiles.has(fileName)) {
 			return;
 		}
-		const fileName = getPathNameExceptExtension(document) + ".ts"
+		this.#syncedFiles.get(fileName)!.close();
 		this.#syncedFiles.delete(fileName);
-		// this.pendingDiagnostics.delete(resource);
-		// this.pendingGetErr?.files.delete(resource);
-		// this.requestAllDiagnostics();
-
 		this.#server.closeFileRequest(fileName);
 	}
 

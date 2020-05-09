@@ -11,3 +11,6 @@ export function getPathNameExceptExtension(document: vscode.TextDocument){
     const fileName = pathItems.pop()!;
     return pathItems.join(path.sep) + "/-view.tree/" + fileName;
 }
+export function getGeneratedPathName(document: vscode.TextDocument){
+    return getPathNameExceptExtension(document) + ".ts";
+}
