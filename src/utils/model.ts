@@ -10,6 +10,6 @@ export const enum DiagnosticKind {
 }
 export interface TsDiagnostics {
 	readonly kind: DiagnosticKind;
-	readonly resource: vscode.Uri;
+	readonly resource: string;
 	readonly diagnostics: Proto.Diagnostic[];
 }

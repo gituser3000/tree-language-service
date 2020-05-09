@@ -10,6 +10,7 @@ import { EOL, platform } from "os";
 import { CommandTypes } from "typescript/lib/protocol";
 import { TsDiagnostics } from "./utils/model";
 import { getDignosticsKind } from "./features/diagnostics";
+import { normalize } from "path";
 
 interface RequestCallback {
 	resolve: Function;
@@ -220,7 +221,7 @@ export class TsServer extends Disposable {
 				if (diagnosticEvent.body && diagnosticEvent.body.diagnostics) {
 					this.#onDiagnosticsReceived.fire({
 						kind: getDignosticsKind(event),
-						resource: vscode.Uri.parse(diagnosticEvent.body.file),
+						resource: normalize(diagnosticEvent.body.file),
 						diagnostics: diagnosticEvent.body.diagnostics
 					});
 					

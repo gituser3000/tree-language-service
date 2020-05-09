@@ -11,7 +11,7 @@ export function diagnostics(server: TsServer, context: vscode.ExtensionContext){
 	const diagnostics= new Map<string, Diagnostic[]>();
 	server.onDiagnosticsReceived((diag)=>{
 		if ([DiagnosticKind.Semantic, DiagnosticKind.Syntax].includes(diag.kind)){
-			diagnostics.set(`${diag.kind}:${diag.resource.path}`, diag.diagnostics);
+      diagnostics.set(`${diag.kind}:${diag.resource}`, diag.diagnostics);
 		}
 	})
 
@@ -34,7 +34,7 @@ export function diagnostics(server: TsServer, context: vscode.ExtensionContext){
 async function prepareDiagnostics(editor: vscode.TextEditor, diagnosticMap: Map<string, Proto.Diagnostic[]>){
 	const pathName = getPathNameExceptExtension(editor.document);
 	const sourceMapJson = JSON.parse(readFileSync(pathName + ".map", 'utf8'))
-	const sourceMap = await new SourceMapConsumer(sourceMapJson);
+  const sourceMap = await new SourceMapConsumer(sourceMapJson);
 	return [
 		diagnosticMap.get(`${DiagnosticKind.Semantic}:${pathName}.ts`),
 		diagnosticMap.get(`${DiagnosticKind.Syntax}:${pathName}.ts`)
