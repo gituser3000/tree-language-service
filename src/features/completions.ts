@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import { getPathNameExceptExtension, getNameExceptExtension } from '../utils/functions';
-import { readFileSync } from 'fs';
-import { SourceMapConsumer } from 'source-map';
+import { getPathNameExceptExtension, getNameExceptExtension, getSourceMap } from '../utils/functions';
 import { TsServer } from '../tsserver';
 import { CompletionItemKind } from 'vscode';
 import { TREE_PATTERN } from '../utils/model';
@@ -34,8 +32,7 @@ function getTsCompletions(server: TsServer) {
             async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                 if (document.getText().length === 0) return undefined;
                 const pathName = getPathNameExceptExtension(document);
-                const sourceMapJson = JSON.parse(readFileSync(getPathNameExceptExtension(document) + ".map", 'utf8'))
-                const consumer = await new SourceMapConsumer(sourceMapJson);
+                const consumer = await getSourceMap(document);
                 const generatedPosition = consumer.generatedPositionFor({
                     column: position.character + 1,
                     line: position.line + 1,

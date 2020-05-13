@@ -86,6 +86,18 @@ export class TsServer extends Disposable {
 		return this.runRequestWithResponse(request) as Promise<Proto.CompletionInfoResponse>;
 	}
 
+	public runRenameRequest(file: string, line: number, offset: number){
+		const request: Request<Proto.RenameRequest> = {
+			command: CommandTypes.Rename,
+			arguments: {
+				file,
+				line,
+				offset
+			}
+		}
+		return this.runRequestWithResponse(request) as Promise<Proto.RenameResponse>;
+	}
+
 	private runRequestWithResponse(request: any){
 		return new Promise((resolve, reject) => {
 			this.#callbacks[this.#seq] = {

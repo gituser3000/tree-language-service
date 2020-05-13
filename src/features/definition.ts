@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import { getPathNameExceptExtension, getNameExceptExtension } from '../utils/functions';
-import { readFileSync } from 'fs';
-import { SourceMapConsumer } from 'source-map';
+import { getPathNameExceptExtension, getNameExceptExtension, getSourceMap } from '../utils/functions';
 import { TsServer } from '../tsserver';
 import { TREE_PATTERN } from '../utils/model';
 import { CommandTypes } from 'typescript/lib/protocol';
@@ -16,8 +14,7 @@ export function definition(server: TsServer, context: vscode.ExtensionContext) {
 function getTreeTsDefinitions(server: TsServer) {
     return vscode.languages.registerDefinitionProvider(TREE_PATTERN, {
         async provideDefinition(document, position, token) {
-            const sourceMapJson = JSON.parse(readFileSync(getPathNameExceptExtension(document) + ".map", 'utf8'))
-            const sourceMap = await new SourceMapConsumer(sourceMapJson);
+            const sourceMap = await getSourceMap(document);
             const genPos = sourceMap.generatedPositionFor({
                 column: position.character + 1,
                 line: position.line + 1,

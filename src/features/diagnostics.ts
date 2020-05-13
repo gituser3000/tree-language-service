@@ -3,9 +3,8 @@ import * as vscode from "vscode";
 import { DiagnosticKind } from "../utils/model";
 import * as Proto from 'typescript/lib/protocol';
 import { Diagnostic } from "typescript/lib/protocol";
-import { SourceMapConsumer, NullableMappedPosition } from "source-map";
-import { readFileSync } from "fs";
-import { getPathNameExceptExtension } from "../utils/functions";
+import { NullableMappedPosition } from "source-map";
+import { getPathNameExceptExtension, getSourceMap } from "../utils/functions";
 
 export function diagnostics(server: TsServer, context: vscode.ExtensionContext){
 	const diagnostics= new Map<string, Diagnostic[]>();
@@ -33,8 +32,7 @@ export function diagnostics(server: TsServer, context: vscode.ExtensionContext){
 
 async function prepareDiagnostics(editor: vscode.TextEditor, diagnosticMap: Map<string, Proto.Diagnostic[]>){
 	const pathName = getPathNameExceptExtension(editor.document);
-	const sourceMapJson = JSON.parse(readFileSync(pathName + ".map", 'utf8'))
-  const sourceMap = await new SourceMapConsumer(sourceMapJson);
+  	const sourceMap = await getSourceMap(editor.document);
 	return [
 		diagnosticMap.get(`${DiagnosticKind.Semantic}:${pathName}.ts`),
 		diagnosticMap.get(`${DiagnosticKind.Syntax}:${pathName}.ts`)

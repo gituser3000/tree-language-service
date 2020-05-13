@@ -4,6 +4,7 @@ import { FileSynchronize } from './fileSynchronize';
 import { completions } from './features/completions';
 import { definition } from './features/definition';
 import { diagnostics } from './features/diagnostics';
+import { refactoring } from './features/refactoring';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -13,6 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// completions(server, context);
 		definition(server, context);
 		diagnostics(server, context);
+		refactoring(server,context);
 	} catch (e) {
 		console.log("INITIALIZATION FAIL: ", e);
 	}
