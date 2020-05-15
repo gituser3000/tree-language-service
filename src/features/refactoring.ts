@@ -7,10 +7,24 @@ import { TREE_PATTERN } from '../utils/model';
 import { getSourceMap, getNameExceptExtension, getPathNameExceptExtension } from '../utils/functions';
 import { BasicSourceMapConsumer } from 'source-map';
 
-const METHOD_SYMBOLS = /(<=>|<=|=>)/;
-
 export function refactoring(server: TsServer, context: vscode.ExtensionContext) {
-    context.subscriptions.push(treeToTsRename(server))
+    context.subscriptions.push(treeToTsRename(server), tsToTreeRename(server))
+}
+
+function tsToTreeRename(server:TsServer){
+    return vscode.languages.registerRenameProvider({ pattern: "**/*.ts"}, {
+        async provideRenameEdits(document, position, newName, token){
+            const sourceMap = await getSourceMap(document);
+            const response = await server.runRenameRequest(document.fileName, position.line, position.character);
+            if (!response.success || !response.body){
+                
+            }else {
+                const edit = new vscode.WorkspaceEdit();
+                addTreeFilesToEdit(response.body.locs, edit, newName, sourceMap);
+                return edit;
+            }
+        }
+    })
 }
 
 function treeToTsRename(server: TsServer){
