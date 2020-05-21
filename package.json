@@ -8,7 +8,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/gituser3000/tree-language-service"
-      },
+    },
     "engines": {
         "vscode": "^1.43.0"
     },
@@ -18,7 +18,7 @@
     "contributes": {
         "languages": [
             {
-                "id": "tree",
+                "id": "view.tree",
                 "aliases": [
                     "mol view tree",
                     "tree"
@@ -31,9 +31,25 @@
         ],
         "grammars": [
             {
-                "language": "tree",
+                "language": "view.tree",
                 "scopeName": "source.tree",
                 "path": "./syntaxes/tree.tmLanguage.json"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "when": "resourceLangId == view.tree",
+                    "command": "tree.implementNavigate",
+                    "group": "navigation"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "tree.implementNavigate",
+                "category": "navigation",
+                "title": "Implement and Navigate"
             }
         ]
     },
@@ -48,8 +64,8 @@
         "watch": "tsc -watch -p ./"
     },
     "dependencies": {
-        "source-map": "^0.7.3",
-        "typescript-language-server": "^0.4.0"
+        "nthline": "^1.0.2",
+        "source-map": "^0.7.3"
     },
     "devDependencies": {
         "@types/node": "^10.12.18",
