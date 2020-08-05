@@ -6,11 +6,13 @@ import { definition } from './features/definition';
 import { diagnostics } from './features/diagnostics';
 import { refactoring } from './features/refactoring';
 import { implementAndNavigate } from './features/implementAndNavigate';
+import { TsConnector } from './ts-connector';
 
 export function activate(context: vscode.ExtensionContext) {
 
 	try {
 		const server = new TsServer();
+		const tsConnector = new TsConnector();
 		const fileSync = new FileSynchronize(server);
 		// completions(server, context);
 		definition(server, context);
